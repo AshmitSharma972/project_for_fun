@@ -126,3 +126,4 @@ Copy `.env.example` to `.env`, populate credentials, then run `docker compose up
 The API listens on port 8000 and the dashboard on port 8501. See
 [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the record-ready eight-step presentation.
 
+# project_for_fun
