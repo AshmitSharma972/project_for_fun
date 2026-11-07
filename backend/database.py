@@ -1,7 +1,13 @@
+import os
+
 from sqlalchemy import String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-engine = create_engine("sqlite:///./incidentmind.sqlite3", connect_args={"check_same_thread": False})
+DATABASE_URL = os.getenv("INCIDENTMIND_DATABASE_URL", "sqlite:///./incidentmind.sqlite3")
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+)
 SessionLocal = sessionmaker(bind=engine)
 class Base(DeclarativeBase): pass
 class IncidentRecord(Base):
