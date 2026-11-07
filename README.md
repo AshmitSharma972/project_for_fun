@@ -111,3 +111,18 @@ IncidentMind’s runtime, memory system, or production data path.
   cannot verify a live integration. That verification is a Phase 1 integration
   gate when credentials are supplied.
 
+## Architecture
+
+`Alerts/logs → FastAPI + SQLite → Incident agent → official Hindsight Retain / Recall / Reflect → Groq (when configured) → Streamlit evidence UI → engineer feedback → Hindsight learning`.
+
+Hindsight is the sole memory system. `retain_incident` writes verified incident
+records through `Hindsight.aretain`; `recall_similar` turns `Hindsight.arecall`
+results into evidence for the agent; `reflect` delegates questions to
+`Hindsight.areflect`. See `hindsight_memory/hindsight_client.py`.
+
+## Docker and demo
+
+Copy `.env.example` to `.env`, populate credentials, then run `docker compose up --build`.
+The API listens on port 8000 and the dashboard on port 8501. See
+[DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the record-ready eight-step presentation.
+
