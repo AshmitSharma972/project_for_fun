@@ -27,3 +27,8 @@ implementation and uses only the official `hindsight-client` SDK; `FakeMemory`
 implements the same contract for unit tests. `Incident` remains the stable,
 validated payload accepted by retain.
 
+## Phase 2
+
+`POST /incidents` accepts service/error alert JSON and returns HTTP 201 with an
+`incident` and `category`; `GET /incidents/{id}` returns that stored structure.
+
