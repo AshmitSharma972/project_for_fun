@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     hindsight_base_url: HttpUrl = Field(validation_alias="HINDSIGHT_BASE_URL")
     groq_api_key: SecretStr = Field(validation_alias="GROQ_API_KEY")
     model_name: str = Field(validation_alias="MODEL_NAME", min_length=1)
+    enable_chaos_dojo: bool = Field(default=False, validation_alias="ENABLE_CHAOS_DOJO")
+    enable_deploy_risk: bool = Field(default=False, validation_alias="ENABLE_DEPLOY_RISK")
 
 
 @lru_cache
