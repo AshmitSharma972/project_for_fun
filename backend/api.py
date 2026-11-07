@@ -61,7 +61,17 @@ async def analyze_incident(incident_id: str) -> dict:
 
 @router.post("/incidents/{incident_id}/feedback")
 async def submit_feedback(incident_id: str, feedback: Feedback) -> dict:
-    try: return await process_feedback(incident_id, feedback)
+    try:
+        # Feedback is the verified learning event. Send it through the same
+        # official Hindsight adapter used for analysis when integration
+        # credentials are configured; preserve local feedback storage when
+        # optional integrations are unavailable.
+        try:
+            settings = Settings()
+            memory = HindsightMemory.from_settings(settings)
+        except Exception:
+            memory = None
+        return await process_feedback(incident_id, feedback, memory)
     except KeyError: raise HTTPException(status_code=404, detail="Incident not found")
 
 @router.post("/incidents/{incident_id}/approve-action")

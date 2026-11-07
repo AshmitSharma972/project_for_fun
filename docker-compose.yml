@@ -1,12 +1,42 @@
 services:
   api:
     build: .
-    env_file: .env
+    restart: unless-stopped
+    environment:
+      HINDSIGHT_API_KEY: ${HINDSIGHT_API_KEY:-}
+      HINDSIGHT_BASE_URL: ${HINDSIGHT_BASE_URL:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      MODEL_NAME: ${MODEL_NAME:-openai/gpt-oss-120b}
+      INCIDENTMIND_DATABASE_URL: sqlite:////app/data/incidentmind.sqlite3
     ports: ["8000:8000"]
-    volumes: ["./data:/app/data"]
+    volumes: ["incidentmind_data:/app/data"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
   dashboard:
     build: .
+    restart: unless-stopped
     command: streamlit run frontend/dashboard.py --server.address 0.0.0.0
     environment: ["INCIDENTMIND_API_URL=http://api:8000"]
     ports: ["8501:8501"]
-    depends_on: [api]
+    depends_on:
+      api:
+        condition: service_healthy
+  frontend:
+    restart: unless-stopped
+    build:
+      context: ./frontend_web
+      args:
+        INCIDENTMIND_API_BASE_URL: http://api:8000
+        NEXT_PUBLIC_USE_MOCK: ${NEXT_PUBLIC_USE_MOCK:-false}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    ports: ["3000:3000"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  incidentmind_data:

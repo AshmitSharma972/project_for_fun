@@ -1,5 +1,6 @@
 .env
 .venv/
+.pnpm-store/
 __pycache__/
 .pytest_cache/
 *.py[cod]
@@ -7,4 +8,11 @@ __pycache__/
 data/synthetic_incidents_*.jsonl
 incident-classifier/
 .streamlit/
+frontend_web/node_modules/
+frontend_web/.next/
+frontend_web/coverage/
+frontend_web/playwright-report/
+frontend_web/test-results/
+frontend_web/next-env.d.ts
+frontend_web/tsconfig.tsbuildinfo
 

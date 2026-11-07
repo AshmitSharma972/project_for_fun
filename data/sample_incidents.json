@@ -1,3 +1,58 @@
 [
-  {"id":"sample-db-1","service":"payments","error":"connection pool timeout","severity":"high","symptoms":["timeouts"],"logs_excerpt":"pool exhausted","suspected_cause":"pool saturation","verified_cause":"database connection pool exhausted","resolution_steps":["increase pool capacity"],"outcome":"resolved","timestamps":[],"tags":["database","payments"]}
+  {
+    "id": "inc-db-101",
+    "service": "payments-api",
+    "error": "QueuePool limit of size 20 overflow 10 reached, connection timed out",
+    "category": "Database",
+    "severity": "high",
+    "symptoms": ["connection timeout", "500 Internal Server Error", "pool exhaustion"],
+    "logs_excerpt": "sqlalchemy.exc.TimeoutError: QueuePool limit 20 reached in checkout.py:142\n  File 'payments/checkout.py', line 142, in process_charge\n  with engine.connect() as conn:",
+    "suspected_cause": "Unclosed database connections during high checkout volume",
+    "verified_cause": "Checkout batch queries held database connections open without timeout in exception blocks",
+    "resolution_steps": ["Ensured connection release in finally block", "Increased pool capacity to 35 with pool_recycle=1800", "Added pool saturation alert threshold at 80%"],
+    "outcome": "resolved",
+    "tags": ["database", "sqlalchemy", "pool-exhaustion", "payments"]
+  },
+  {
+    "id": "inc-db-102",
+    "service": "billing-worker",
+    "error": "OperationalError: server closed the connection unexpectedly",
+    "category": "Database",
+    "severity": "high",
+    "symptoms": ["aborted transactions", "connection termination", "worker restart"],
+    "logs_excerpt": "psycopg2.OperationalError: server closed the connection unexpectedly\n  PostgreSQL FATAL: remaining connection slots are reserved for non-replication superuser connections",
+    "suspected_cause": "PostgreSQL max_connections reached during end-of-month invoice run",
+    "verified_cause": "PostgreSQL max_connections reached during monthly invoice generation",
+    "resolution_steps": ["Staggered cron schedule across billing partitions", "Enabled PgBouncer transaction-level connection pooling"],
+    "outcome": "resolved",
+    "tags": ["database", "postgres", "billing", "pgbouncer"]
+  },
+  {
+    "id": "inc-ov-201",
+    "service": "checkout-gateway",
+    "error": "CPU saturation above 92% across all workers, request queue backlog",
+    "category": "Server Overload",
+    "severity": "critical",
+    "symptoms": ["high CPU", "thread starvation", "elevated latency"],
+    "logs_excerpt": "WARN worker_pool: cpu_usage=94.2% queue_depth=412 active_threads=64\nERROR timeout: request dropped after 15000ms in queue",
+    "suspected_cause": "Uncached promo code validation loop on flash sale traffic",
+    "verified_cause": "Uncached promo code validation loop computing regex checks on every cart update",
+    "resolution_steps": ["Added Redis cache for active promo rules with 60s TTL", "Scaled replica deployment from 4 to 8 pods", "Added CPU HPA at 70% threshold"],
+    "outcome": "resolved",
+    "tags": ["overload", "cpu", "redis", "checkout"]
+  },
+  {
+    "id": "inc-api-301",
+    "service": "order-router",
+    "error": "502 Bad Gateway: Upstream shipping partner API timed out after 30000ms",
+    "category": "API",
+    "severity": "high",
+    "symptoms": ["upstream 502", "shipping label creation failure", "retry storm"],
+    "logs_excerpt": "httpx.ConnectTimeout: HTTPSConnectionPool(host='api.shipping-partner.com'): Read timed out. (read timeout=30)",
+    "suspected_cause": "External partner API latency degradation without circuit breaker",
+    "verified_cause": "External partner API outage caused thread holding and retry storm",
+    "resolution_steps": ["Integrated PyBreaker circuit breaker with 5s timeout", "Implemented fallback queue for offline label generation"],
+    "outcome": "resolved",
+    "tags": ["api", "circuit-breaker", "upstream", "orders"]
+  }
 ]

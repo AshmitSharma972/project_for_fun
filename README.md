@@ -123,7 +123,87 @@ results into evidence for the agent; `reflect` delegates questions to
 ## Docker and demo
 
 Copy `.env.example` to `.env`, populate credentials, then run `docker compose up --build`.
-The API listens on port 8000 and the dashboard on port 8501. See
+The API listens on port 8000, the Streamlit fallback on port 8501, and the Next.js
+frontend on port 3000. See
 [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the record-ready eight-step presentation.
+
+## Next.js web frontend
+
+`frontend_web/` is the new marketing site and interactive response console. The
+original Streamlit dashboard remains available as a fallback. The Next.js app
+proxies browser requests from `/api/*` to FastAPI using a rewrite, so the browser
+does not call the API origin directly and does not need CORS configuration.
+
+### Run locally
+
+Start FastAPI in the repository root:
+
+```powershell
+uvicorn main:app --reload
+```
+
+In a second terminal, install and start the web app:
+
+```powershell
+cd frontend_web
+Copy-Item .env.example .env.local
+pnpm install
+pnpm run dev
+```
+
+Open `http://localhost:3000` for the cinematic landing page and
+`http://localhost:3000/console` for the incident console. Set
+`NEXT_PUBLIC_USE_MOCK=true` in `frontend_web/.env.local` to use contract-shaped
+demo fixtures without a live backend. A **Demo data** badge is shown whenever
+mock fixtures are active. For live requests, keep it `false` and set
+`INCIDENTMIND_API_BASE_URL=http://127.0.0.1:8000`.
+
+### Test the web app
+
+```powershell
+cd frontend_web
+pnpm run typecheck
+pnpm test
+pnpm run test:e2e
+```
+
+Playwright runs the complete intake → analysis → feedback → simulated approval
+flow in mock mode. Backend tests remain in the repository root and run with
+`pytest`.
+
+### Docker Compose
+
+On Windows, double-click `start-project.cmd` (or run `./start-project.ps1` in
+PowerShell) to start Docker Desktop if needed, build the images, and run all
+three services in the background. Use `stop-project.cmd` or
+`./stop-project.ps1` to stop them; their containers and SQLite data volume stay
+in place for the next start. The Compose services use `restart: unless-stopped`,
+so they resume when Docker Desktop starts again. For automatic resume after sign
+in, enable **Start Docker Desktop when you sign in** in Docker Desktop settings.
+
+You can also use `docker compose up -d --build` and `docker compose stop`
+directly. FastAPI is at `:8000`, the Streamlit fallback at `:8501`, and Next.js
+at `:3000`. The frontend image builds with
+`INCIDENTMIND_API_BASE_URL=http://api:8000`, pointing its Next.js rewrite at the
+Compose API service. API integrations are optional; copy `.env.example` to `.env`
+only when you need to configure Hindsight or Groq credentials. Set
+`NEXT_PUBLIC_USE_MOCK=true` before building only when you want the frontend to
+use demo fixtures.
+
+### Contract notes
+
+`CONTRACTS.md` documents the health and incident creation/retrieval contracts,
+while `backend/api.py` also exposes analysis, feedback, simulated approval and
+outcome-statistics routes. The web app validates each route response with Zod
+schemas in `frontend_web/lib/contracts.ts`, logs response mismatches, and renders
+optional fields defensively. The live API does not provide an incident-list
+route, integration-status fields, similarity scores, or enriched service,
+category, outcome and verified-cause fields on memory evidence. The console
+therefore keeps recent IDs in browser storage, shows integration status as
+“not reported by API,” and only renders evidence details when the backend
+actually supplies them. The landing preview uses clearly labelled demo fixtures.
+
+Animation timing, easing, stagger and Lenis lerp values live in
+`frontend_web/lib/animation.ts`.
 
 # project_for_fun

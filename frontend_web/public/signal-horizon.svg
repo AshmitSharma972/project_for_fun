@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1200" fill="none">
+  <defs>
+    <radialGradient id="space" cx="58%" cy="39%" r="85%"><stop stop-color="#151b38"/><stop offset=".5" stop-color="#080b16"/><stop offset="1" stop-color="#030407"/></radialGradient>
+    <radialGradient id="moon" cx="48%" cy="15%" r="88%"><stop stop-color="#394566"/><stop offset=".32" stop-color="#202a43"/><stop offset=".75" stop-color="#101522"/><stop offset="1" stop-color="#05070c"/></radialGradient>
+    <linearGradient id="rim" x1="0" x2="1" y1=".3" y2=".8"><stop stop-color="#4f6cff" stop-opacity="0"/><stop offset=".2" stop-color="#4f6cff" stop-opacity=".72"/><stop offset=".55" stop-color="#acc5ff"/><stop offset=".78" stop-color="#526fff"/><stop offset="1" stop-color="#4f6cff" stop-opacity="0"/></linearGradient>
+    <filter id="glow" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .13"/></feComponentTransfer></filter>
+    <pattern id="stars" width="173" height="139" patternUnits="userSpaceOnUse"><circle cx="13" cy="22" r=".8" fill="#cbd7ff" opacity=".56"/><circle cx="90" cy="64" r=".6" fill="#fff" opacity=".55"/><circle cx="148" cy="17" r=".7" fill="#a9b9f7" opacity=".5"/><circle cx="52" cy="120" r=".6" fill="#fff" opacity=".43"/><circle cx="125" cy="111" r=".9" fill="#dce5ff" opacity=".35"/></pattern>
+    <clipPath id="planet"><ellipse cx="1170" cy="1114" rx="1170" ry="836"/></clipPath>
+  </defs>
+  <path fill="url(#space)" d="M0 0h1920v1200H0z"/><path fill="url(#stars)" d="M0 0h1920v1200H0z"/>
+  <ellipse cx="1170" cy="1114" rx="1170" ry="836" fill="#536bff" opacity=".42" filter="url(#glow)"/>
+  <ellipse cx="1170" cy="1114" rx="1170" ry="836" fill="url(#moon)" stroke="url(#rim)" stroke-width="4"/>
+  <g clip-path="url(#planet)" opacity=".3" fill="#8996b2"><circle cx="414" cy="695" r="2"/><circle cx="512" cy="538" r="3"/><circle cx="762" cy="878" r="2"/><circle cx="1023" cy="644" r="3"/><circle cx="1311" cy="831" r="2"/><circle cx="1486" cy="546" r="3"/><circle cx="1702" cy="734" r="2"/><circle cx="1150" cy="1011" r="3"/><circle cx="676" cy="1002" r="2"/><circle cx="1530" cy="1062" r="2"/><circle cx="911" cy="531" r="2"/></g>
+  <path d="M0 0h1920v1200H0z" filter="url(#grain)" opacity=".3"/>
+</svg>
