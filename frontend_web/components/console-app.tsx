@@ -72,7 +72,36 @@ export function ConsoleApp() {
   const [outcome, setOutcome] = useState<FeedbackInput["outcome"]>("resolved");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [demoActive, setDemoActive] = useState(MOCK_MODE);
+  const [activeSection, setActiveSection] = useState("intake");
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const sectionEls = SIDEBAR_ITEMS.map((item) => document.getElementById(item.id)).filter(Boolean) as HTMLElement[];
+          const targetY = window.innerHeight * 0.35;
+          let closest = "intake";
+          let minDiff = Infinity;
+          sectionEls.forEach((el) => {
+            const rect = el.getBoundingClientRect();
+            const diff = Math.abs(rect.top - targetY);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closest = el.id;
+            }
+          });
+          setActiveSection(closest);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const healthQuery = useQuery({ queryKey: ["health"], queryFn: getHealth, refetchInterval: 15_000, retry: false });
   const statsQuery = useQuery({ queryKey: ["stats"], queryFn: getStats, enabled: true, refetchInterval: 30_000 });
@@ -166,13 +195,69 @@ export function ConsoleApp() {
   const healthStatus = healthQuery.data?.demo ? (MOCK_MODE ? "Demo mode" : "Demo fallback") : healthQuery.data?.data.status === "ok" ? "Connected" : healthQuery.isError ? "Unavailable" : "Checking";
 
   return <>
-    <header className="site-nav"><a href="/" aria-label="IncidentMind home"><BrandMark/></a><nav className="nav-links" aria-label="Site navigation"><a href="/#product">Product</a><a href="/#journey">How it works</a><a href="/#developers">Docs</a></nav><span className="nav-spacer"/><span className="nav-actions"><Link href="/console" className="pill">Console <ArrowRight size={14}/></Link></span></header>
+    <header className="console-header">
+      <button className="mobile-side-toggle" onClick={() => setSideOpen(!sideOpen)} aria-label={sideOpen ? "Close console navigation" : "Open console navigation"} aria-expanded={sideOpen}>{sideOpen ? <X size={17}/> : <Menu size={17}/>}</button>
+      <Link href="/" aria-label="IncidentMind home" style={{ display: "flex", alignItems: "center" }}><BrandMark/></Link>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "4px", borderLeft: "1px solid var(--line)", paddingLeft: "14px" }}>
+        <SquareTerminal size={16} aria-hidden="true" style={{ color: "#9cb4ff" }}/>
+        <span style={{ fontSize: "13px", fontWeight: "650", color: "#f5f7ff" }}>Response console</span>
+      </div>
+      <nav className="nav-links" aria-label="Site navigation">
+        <Link href="/#product">Product</Link>
+        <Link href="/#journey">How it works</Link>
+        <Link href="/#developers">Docs</Link>
+      </nav>
+      <span className="nav-spacer"/>
+      <div className="nav-actions">
+        {demoActive && <span className="demo-badge">Demo data</span>}
+        <div className="console-top__status" aria-live="polite">
+          <i className={`status-dot${healthStatus === "Connected" ? " status-dot--ok" : healthStatus === "Unavailable" ? " status-dot--bad" : ""}`} />
+          Backend {healthStatus}
+        </div>
+        <button className="nav-icon" onClick={() => { void healthQuery.refetch(); void statsQuery.refetch(); }} aria-label="Refresh system status and outcome statistics">
+          <RefreshCw size={15}/>
+        </button>
+      </div>
+    </header>
     <div className="console-shell">
-      <div className="console-top"><button className="mobile-side-toggle" onClick={() => setSideOpen(!sideOpen)} aria-label={sideOpen ? "Close console navigation" : "Open console navigation"} aria-expanded={sideOpen}>{sideOpen ? <X size={17}/> : <Menu size={17}/>}</button><SquareTerminal size={17} aria-hidden="true"/><span className="console-top__title">Response console</span>{demoActive && <span className="demo-badge">Demo data</span>}<div className="console-top__status" aria-live="polite"><i className={`status-dot${healthStatus === "Connected" ? " status-dot--ok" : healthStatus === "Unavailable" ? " status-dot--bad" : ""}`} />Backend {healthStatus}</div><button className="nav-icon" onClick={() => { void healthQuery.refetch(); void statsQuery.refetch(); }} aria-label="Refresh system status and outcome statistics"><RefreshCw size={15}/></button></div>
       <div className="console-layout">
-        <aside className={`console-sidebar${sideOpen ? " console-sidebar--open" : ""}`} aria-label="Console sections"><div className="sidebar-brand"><BrandMark small/><b className="brand__name">CONSOLE</b></div><div className="sidebar-label">Workspace</div>{SIDEBAR_ITEMS.map(({id,label,icon:Icon})=><button className="side-link" key={id} onClick={() => scrollTo(id)}><Icon size={16} aria-hidden="true"/>{label}</button>)}<div className="sidebar-note"><ShieldCheck size={14} style={{verticalAlign:"middle",marginRight:6}}/>Recommendations require engineer review. No recovery commands run here.</div></aside>
+        <aside className={`console-sidebar${sideOpen ? " console-sidebar--open" : ""}`} aria-label="Console sections">
+          <div className="sidebar-brand"><BrandMark small/><b className="brand__name">CONSOLE</b></div>
+          <div className="sidebar-label">Workspace</div>
+          {SIDEBAR_ITEMS.map(({ id, label, icon: Icon }) => {
+            const isActive = activeSection === id;
+            return (
+              <button
+                className={`side-link${isActive ? " side-link--active" : ""}`}
+                key={id}
+                onClick={() => {
+                  setActiveSection(id);
+                  scrollTo(id);
+                }}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="sidebar-active-pill"
+                    className="side-link-active-indicator"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <Icon size={16} aria-hidden="true" style={{ position: "relative", zIndex: 2, color: isActive ? "#9cb4ff" : undefined }} />
+                <span style={{ position: "relative", zIndex: 2 }}>{label}</span>
+              </button>
+            );
+          })}
+          <div className="sidebar-note"><ShieldCheck size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Recommendations require engineer review. No recovery commands run here.</div>
+        </aside>
         <main id="main-content" className="console-main">
-          <div className="console-intro"><div><span className="micro-label">On-call workspace / evidence first</span><h1>See the signal.<br/>Understand the history.</h1><p>Bring in an alert, review what the system found, and record what an engineer confirmed.</p></div>{demoActive ? <span className="demo-badge">Demo data · {MOCK_MODE ? "mock mode" : "backend unavailable"}</span> : <span className={healthStatus === "Connected" ? "real-badge" : "tag"}><i className={`status-dot${healthStatus === "Connected" ? " status-dot--ok" : ""}`}/>{healthStatus === "Connected" ? "Live backend" : "Backend unavailable"}</span>}</div>
+          <div className="console-intro">
+            <div>
+              <span className="micro-label">On-call workspace / evidence first</span>
+              <h1>See the signal.<br/>Understand the history.</h1>
+              <p>Bring in an alert, review what the system found, and record what an engineer confirmed.</p>
+            </div>
+            {demoActive ? <span className="demo-badge">Demo data · {MOCK_MODE ? "mock mode" : "backend unavailable"}</span> : <span className={healthStatus === "Connected" ? "real-badge" : "tag"}><i className={`status-dot${healthStatus === "Connected" ? " status-dot--ok" : ""}`}/>{healthStatus === "Connected" ? "Live backend" : "Backend unavailable"}</span>}
+          </div>
           {notice && <div className={`notice notice--${notice.tone}`} role="status" style={{marginBottom:18}}>{notice.text}</div>}
 
           <section className="console-section" id="intake"><div className="console-section__head"><h2><span className="micro-label">01 / </span>New incident</h2><span>Classify &amp; store</span></div>

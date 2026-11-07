@@ -40,18 +40,72 @@ const routes = [
   ["GET", "/stats/outcomes", "Summarize stored outcomes"],
 ];
 
+const PREVIEW_STEPS_DATA = [
+  {
+    step: 1,
+    tab: "Intake",
+    icon: "＋",
+    severity: "Medium · Ingestion",
+    error: "Connection timeout reported from checkout worker",
+    id: "ALERT INTAKE / PAYMENTS-API",
+    reviewTitle: "Alert received",
+    reviewSub: "Normalized raw logs and extracted failure signature.",
+  },
+  {
+    step: 2,
+    tab: "Incidents",
+    icon: "◎",
+    severity: "High · Database",
+    error: "Database connection pool exhausted: timeout acquiring connection",
+    id: "DEMO INCIDENT / PAYMENTS-API",
+    reviewTitle: "Signals classified",
+    reviewSub: "Classified into Database category and persisted to SQLite.",
+  },
+  {
+    step: 3,
+    tab: "Analysis",
+    icon: "⌁",
+    severity: "High · Evidence Found",
+    error: "QueuePool limit 20 overflow 10 reached in checkout.py",
+    id: "2 HISTORICAL RECORDS RECALLED",
+    reviewTitle: "Similar history found",
+    reviewSub: "Retrieved past verified incidents from Hindsight memory.",
+  },
+  {
+    step: 4,
+    tab: "Runbooks",
+    icon: "↗",
+    severity: "Action Ready · Review",
+    error: "database_failure.md · 3 recommended recovery steps",
+    id: "HUMAN-APPROVED WORKFLOW",
+    reviewTitle: "Runbook ready for review",
+    reviewSub: "Curated recovery steps paired with verified evidence.",
+  },
+];
+
 function SectionIndex({ number, label }: { number: string; label: string }) {
   return <div className="section-index" aria-hidden="true"><strong>S.{number}</strong>{label}</div>;
 }
 
 function StoryStage({ active }: { active: number }) {
-  const item = journey[active];
-  return <div className="story__stage"><div className="demo-window mini-stage">
-    <div className="mini-stage__label">IncidentMind · {item.label}</div>
-    <div className="mini-stage__main">{item.mock}</div>
+  const item = journey[active] ?? journey[0];
+  return <div className="story__stage"><div className="demo-window mini-stage" style={{ transition: "all 0.35s ease" }}>
+    <div className="mini-stage__label" style={{ transition: "all 0.3s ease" }}>IncidentMind · {item.label}</div>
+    <div className="mini-stage__main anim-fade-in" key={item.mock}>{item.mock}</div>
     <div className="mini-stage__sub">Step {String(active + 1).padStart(2, "0")} / 06</div>
     <div className="mini-stage__lines"><i /><i /><i /></div>
-    <div className="tooltip-dots" aria-hidden="true">{journey.map((_, i) => <i key={i} style={{ background: i === active ? "#9cb4ff" : undefined, width: i === active ? 20 : undefined }} />)}</div>
+    <div className="tooltip-dots" aria-hidden="true">
+      {journey.map((_, i) => (
+        <i
+          key={i}
+          style={{
+            background: i === active ? "#9cb4ff" : "rgba(255,255,255,.2)",
+            width: i === active ? 22 : 7,
+            transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        />
+      ))}
+    </div>
   </div></div>;
 }
 
@@ -87,6 +141,8 @@ export function Landing() {
   const [fallbackOn, setFallbackOn] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [copied, setCopied] = useState(false);
+  const currentPreview = PREVIEW_STEPS_DATA[previewStep - 1] ?? PREVIEW_STEPS_DATA[0];
+
   const statsQuery = useQuery({
     queryKey: ["outcomes"],
     queryFn: async () => {
@@ -99,14 +155,46 @@ export function Landing() {
   const stats = statsResult.data;
   const usingDemo = statsResult.demo;
 
+  // Auto-advance preview walkthrough in Section 01
   useEffect(() => {
-    const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-journey-step]"));
-    const observer = new IntersectionObserver((entries) => {
-      const current = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (current) setActiveStep(Number((current.target as HTMLElement).dataset.journeyStep));
-    }, { threshold: [.25, .55, .8], rootMargin: "-12% 0px -20% 0px" });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+    const timer = setInterval(() => {
+      setPreviewStep((prev) => (prev === 4 ? 1 : prev + 1));
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Smooth scroll sync for Section 03 Journey
+  useEffect(() => {
+    let ticking = false;
+    const updateActiveStep = () => {
+      const stepElements = Array.from(document.querySelectorAll<HTMLElement>("[data-journey-step]"));
+      if (!stepElements.length) return;
+      const targetY = window.innerHeight * 0.42;
+      let closest = 0;
+      let minDiff = Infinity;
+      stepElements.forEach((el, index) => {
+        const rect = el.getBoundingClientRect();
+        const center = rect.top + rect.height * 0.35;
+        const diff = Math.abs(center - targetY);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = index;
+        }
+      });
+      setActiveStep(closest);
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(updateActiveStep);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    updateActiveStep();
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   async function copyCommands() {
@@ -140,11 +228,56 @@ export function Landing() {
           <div className="demo-window" aria-label="Preview of the IncidentMind console">
             <div className="window-bar"><i className="window-dot"/><i className="window-dot"/><i className="window-dot"/><span className="window-title">INCIDENTMIND / RESPONSE CONSOLE</span><span className="nav-spacer"/><span className="demo-badge">Demo data</span></div>
             <div className="preview">
-              <div className="preview__rail"><div>◈ &nbsp; Overview</div><div>＋ &nbsp; Intake</div><div>◎ &nbsp; Incidents</div><div>⌁ &nbsp; Analysis</div><div>↗ &nbsp; Outcomes</div></div>
+              <div className="preview__rail">
+                {PREVIEW_STEPS_DATA.map((tab) => (
+                  <div
+                    key={tab.step}
+                    style={{
+                      background: previewStep === tab.step ? "rgba(255,255,255,.14)" : "transparent",
+                      color: previewStep === tab.step ? "#ffffff" : "var(--subtle)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      transition: "all 0.25s ease",
+                    }}
+                    onClick={() => setPreviewStep(tab.step)}
+                  >
+                    <span>{tab.icon}</span> {tab.tab}
+                  </div>
+                ))}
+              </div>
               <div className="preview__body">
-                <div className="preview-card"><div className="preview__severity">High · Database</div><div className="preview__error">Database connection pool exhausted</div><div className="preview__id">DEMO INCIDENT / PAYMENTS-API</div></div>
-                <MemoryGraph evidence={DEMO_ANALYSIS.evidence} demo />
-                <div className="preview__tooltip"><div className="tooltip-top"><span>Step {previewStep} / 4</span><span>INCIDENT REVIEW</span></div><div className="preview__error">{["Alert received", "Signals classified", "Similar history found", "Runbook ready for review"][previewStep-1]}</div><div className="preview__sub">A guided preview of the incident review flow.</div><div className="tooltip-dots"><i/><i/><i/><i/><button className="switch-button" style={{marginLeft:"auto",minHeight:30}} onClick={()=>setPreviewStep((step)=>step===4?1:step+1)} aria-label="Next console preview step">NEXT ›</button></div></div>
+                <div className="preview__left">
+                  <div className="preview-card anim-fade-in" key={`card-${previewStep}`}>
+                    <div className="preview__severity">{currentPreview.severity}</div>
+                    <div className="preview__error">{currentPreview.error}</div>
+                    <div className="preview__id">{currentPreview.id}</div>
+                  </div>
+                  <div className="preview__tooltip anim-fade-in" key={`tip-${previewStep}`}>
+                    <div className="tooltip-top"><span>Step {previewStep} / 4</span><span>INCIDENT REVIEW</span></div>
+                    <div className="preview__error">{currentPreview.reviewTitle}</div>
+                    <div className="preview__sub">{currentPreview.reviewSub}</div>
+                    <div className="tooltip-dots">
+                      {[1, 2, 3, 4].map((s) => (
+                        <i
+                          key={s}
+                          style={{
+                            background: s === previewStep ? "#9cb4ff" : "rgba(255,255,255,.2)",
+                            width: s === previewStep ? 22 : 7,
+                            transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setPreviewStep(s)}
+                        />
+                      ))}
+                      <button className="switch-button" style={{ marginLeft: "auto", minHeight: 30 }} onClick={() => setPreviewStep((step) => step === 4 ? 1 : step + 1)} aria-label="Next console preview step">NEXT ›</button>
+                    </div>
+                  </div>
+                </div>
+                <div className="preview__right">
+                  <MemoryGraph evidence={DEMO_ANALYSIS.evidence} demo />
+                </div>
               </div>
             </div>
           </div>
@@ -163,12 +296,25 @@ export function Landing() {
       <section className="section wrap" id="journey" aria-labelledby="journey-title">
         <SectionIndex number="03" label="How it works" />
         <div className="section-content">
+          <div className="story__intro">
+            <span className="section-kicker">One investigation, six clear steps</span>
+            <h2 className="section-heading" id="journey-title">From first signal to verified learning.</h2>
+          </div>
           <div className="story">
             <div>
-              <div className="story__intro"><span className="section-kicker">One investigation, six clear steps</span><h2 className="section-heading" id="journey-title">From first signal to verified learning.</h2><span className="story__count">{String(activeStep + 1).padStart(2, "0")} / 06</span></div>
-              {journey.map((item, i) => <article className="story__step" data-journey-step={i} key={item.label}>
-                <div className="story__step-content"><span className="micro-label">S.03 · {item.label}</span><h3>{item.title}</h3><p>{item.copy}</p></div>
-              </article>)}
+              {journey.map((item, i) => (
+                <article
+                  className={`story__step${i === activeStep ? " story__step--active" : ""}`}
+                  data-journey-step={i}
+                  key={item.label}
+                >
+                  <div className="story__step-content">
+                    <span className="micro-label">S.03 · {item.label}</span>
+                    <h3>{item.title}</h3>
+                    <p>{item.copy}</p>
+                  </div>
+                </article>
+              ))}
             </div>
             <StoryStage active={activeStep} />
           </div>

@@ -17,7 +17,16 @@ export function MemoryGraph({ evidence, demo = false }: { evidence: Evidence[]; 
         {nodes.map((node, i) => {
           const [x, y] = positions[i];
           const brightness = Math.max(.25, Math.min(1, node.similarity ?? (0.4 + (i % 3) * 0.18)));
-          return <g key={`${node.memory_id ?? i}`} tabIndex={0} role="button" aria-label={`${node.service ?? "Historical incident"}, ${node.category ?? "category unavailable"}, ${node.outcome ?? "outcome unavailable"}`} onFocus={() => setSelected(i)} onMouseEnter={() => setSelected(i)} onClick={() => setSelected(i)}>
+          return <g
+            key={`${node.memory_id ?? i}`}
+            tabIndex={0}
+            role="button"
+            style={{ outline: "none", cursor: "pointer" }}
+            aria-label={`${node.service ?? "Historical incident"}, ${node.category ?? "category unavailable"}, ${node.outcome ?? "outcome unavailable"}`}
+            onFocus={() => setSelected(i)}
+            onMouseEnter={() => setSelected(i)}
+            onClick={() => setSelected(i)}
+          >
             <line x1="200" y1="190" x2={x} y2={y} className={`graph-edge${i === selected ? " graph-edge--bright" : ""}`} opacity={brightness} />
             <circle cx={x} cy={y} r={i === selected ? 22 : 16} className={`graph-node${i === selected ? " graph-node--center" : ""}`} />
             <text x={x} y={y + 3} className="graph-text" textAnchor="middle">{node.similarity != null ? `${Math.round(node.similarity * 100)}` : i + 1}</text>

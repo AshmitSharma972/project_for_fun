@@ -24,10 +24,9 @@ export function SiteNav() {
   }, []);
   return <header className={`site-nav${hidden && !open ? " site-nav--hidden" : ""}`}>
     <Link href="/" aria-label="IncidentMind AI home"><BrandMark /></Link>
-    <nav className="nav-links" aria-label="Main navigation">{links.map(([label, href]) => <a key={label} href={href}>{label}{label === "Docs" && <ArrowUpRight size={12} aria-hidden="true" />}</a>)}</nav>
+    <nav className="nav-links" aria-label="Main navigation">{links.map(([label, href]) => <a key={label} href={href} style={{ display: "inline-flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>{label}{label === "Docs" && <ArrowUpRight size={12} aria-hidden="true" />}</a>)}</nav>
     <span className="nav-spacer" />
     <div className="nav-actions"><Link className="pill" href="/console">Open console <ArrowUpRight size={15} aria-hidden="true" /></Link>
-      <a className="nav-icon nav-icon--github" href="#developers" aria-label="Developer setup"><ArrowUpRight size={20} /></a>
       <button className="nav-icon menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X size={21} /> : <Menu size={22} />}</button>
     </div>
     {open && <nav className="nav-mobile" aria-label="Mobile navigation">{links.map(([label, href]) => <a key={label} href={href} onClick={() => setOpen(false)}>{label}</a>)}<Link href="/console" onClick={() => setOpen(false)}>Open console ↗</Link></nav>}
