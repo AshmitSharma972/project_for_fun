@@ -13,6 +13,9 @@ from agent.root_cause_analyzer import RootCauseAnalyzer
 from agent.groq_llm import GroqLlm
 from config.settings import Settings
 from hindsight_memory.hindsight_client import HindsightMemory
+from learning.feedback_processor import Feedback, process_feedback
+from learning.outcome_stats import outcome_stats
+from backend.database import FeedbackRecord
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -55,4 +58,20 @@ async def analyze_incident(incident_id: str) -> dict:
         analyzer = RootCauseAnalyzer(memory=None)
     analysis = await analyzer.analyze(Incident.model_validate(stored["incident"]), stored["category"])
     return analysis.model_dump(mode="json")
+
+@router.post("/incidents/{incident_id}/feedback")
+async def submit_feedback(incident_id: str, feedback: Feedback) -> dict:
+    try: return await process_feedback(incident_id, feedback)
+    except KeyError: raise HTTPException(status_code=404, detail="Incident not found")
+
+@router.post("/incidents/{incident_id}/approve-action")
+def approve_action(incident_id: str) -> dict:
+    with SessionLocal() as session:
+        feedback = session.get(FeedbackRecord, incident_id)
+        if not feedback: raise HTTPException(status_code=409, detail="Feedback is required before approval")
+        feedback.approved = "true"; session.commit()
+    return {"approved": True, "execution": "simulated only"}
+
+@router.get("/stats/outcomes")
+def stats() -> dict: return outcome_stats()
 

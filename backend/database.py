@@ -12,3 +12,11 @@ class IncidentRecord(Base):
     category: Mapped[str] = mapped_column(String)
     severity: Mapped[str] = mapped_column(String)
     payload: Mapped[str] = mapped_column(Text)
+class FeedbackRecord(Base):
+    __tablename__ = "feedback"
+    incident_id: Mapped[str] = mapped_column(String, primary_key=True)
+    verified_cause: Mapped[str] = mapped_column(Text)
+    steps: Mapped[str] = mapped_column(Text)
+    outcome: Mapped[str] = mapped_column(String)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    approved: Mapped[str] = mapped_column(String, default="false")
