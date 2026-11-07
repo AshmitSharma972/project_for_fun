@@ -7,10 +7,10 @@ incident outcomes, recall relevant evidence, and reflect on recurring patterns.
 
 ## Current status
 
-**Phase 0 complete:** the FastAPI skeleton, structured logs, environment
-configuration, health check, and pytest harness are available. Memory,
-incident ingestion, and dashboard features are deliberately deferred until
-their respective gated phases.
+**Phase 1 complete:** the Phase 0 FastAPI foundation is joined by a typed,
+resilient Hindsight memory adapter, test-only `FakeMemory`, sample seed data,
+and a Retain → Recall CLI demo. Incident ingestion and dashboard features are
+deliberately deferred until their respective gated phases.
 
 ## 10-line implementation plan
 
@@ -47,6 +47,20 @@ The exact API choices will be rechecked against the pinned installed client and
 the cloned official repository before Phase 1 code is written. The official
 client documents synchronous helpers for scripts, but its source explicitly
 prefers `a*` methods in async frameworks such as FastAPI.
+
+### Phase 1 memory commands
+
+With configured credentials, seed the real `incidentmind` Hindsight bank:
+
+```powershell
+python -m hindsight_memory.seed
+```
+
+The credential-free unit-test demo uses `FakeMemory` only:
+
+```powershell
+python -m hindsight_memory.demo
+```
 
 ## Hindsight assumptions to verify in Phase 1
 

@@ -1,0 +1,3 @@
+[
+  {"id":"sample-db-1","service":"payments","error":"connection pool timeout","severity":"high","symptoms":["timeouts"],"logs_excerpt":"pool exhausted","suspected_cause":"pool saturation","verified_cause":"database connection pool exhausted","resolution_steps":["increase pool capacity"],"outcome":"resolved","timestamps":[],"tags":["database","payments"]}
+]

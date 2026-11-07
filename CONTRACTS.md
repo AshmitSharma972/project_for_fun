@@ -19,3 +19,11 @@ extend them only additively.
 `GROQ_API_KEY`, and `MODEL_NAME` from the environment or `.env`. It raises a
 clear Pydantic validation error when any required value is absent.
 
+## Phase 1
+
+`hindsight_memory.hindsight_client.Memory` defines async `retain_incident`,
+`recall_similar`, and `reflect`. `HindsightMemory` is the production
+implementation and uses only the official `hindsight-client` SDK; `FakeMemory`
+implements the same contract for unit tests. `Incident` remains the stable,
+validated payload accepted by retain.
+
