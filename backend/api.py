@@ -8,6 +8,11 @@ import json
 from uuid import uuid4
 from backend.database import Base, IncidentRecord, SessionLocal, engine
 from incident_processing.incident_detector import Alert, detect
+from hindsight_memory.models import Incident
+from agent.root_cause_analyzer import RootCauseAnalyzer
+from agent.groq_llm import GroqLlm
+from config.settings import Settings
+from hindsight_memory.hindsight_client import HindsightMemory
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -39,4 +44,15 @@ def get_incident(incident_id: str) -> dict:
         record = session.get(IncidentRecord, incident_id)
     if not record: raise HTTPException(status_code=404, detail="Incident not found")
     return {"incident": json.loads(record.payload), "category": record.category}
+
+@router.post("/incidents/{incident_id}/analyze")
+async def analyze_incident(incident_id: str) -> dict:
+    stored = get_incident(incident_id)
+    try:
+        settings = Settings()
+        analyzer = RootCauseAnalyzer(HindsightMemory.from_settings(settings), GroqLlm(settings))
+    except Exception:
+        analyzer = RootCauseAnalyzer(memory=None)
+    analysis = await analyzer.analyze(Incident.model_validate(stored["incident"]), stored["category"])
+    return analysis.model_dump(mode="json")
 
