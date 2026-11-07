@@ -4,5 +4,7 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 *.sqlite3
+data/synthetic_incidents_*.jsonl
+incident-classifier/
 .streamlit/
 
